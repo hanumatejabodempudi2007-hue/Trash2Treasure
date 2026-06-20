@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trash to Treasure – Dynamic Inventory & Smart Sales Agent</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (xlsx) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <i data-lucide="sparkles"></i>
+                </div>
+                <div>
+                    <h1 class="brand-title">Trash to Treasure</h1>
+                    <span class="brand-subtitle">Smart Inventory Agent</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-target="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-target="inventory">
+                    <i data-lucide="database"></i>
+                    <span>Inventory Database</span>
+                </a>
+                <a href="#" class="nav-item" data-target="agent-workflow">
+                    <i data-lucide="cpu"></i>
+                    <span>AI Agent Console</span>
+                    <span class="pulse-dot hidden" id="agent-active-pulse"></span>
+                </a>
+                <a href="#" class="nav-item" data-target="action-center">
+                    <i data-lucide="badge-percent"></i>
+                    <span>Action Center</span>
+                    <span class="badge badge-danger hidden" id="flagged-count-badge">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar">
+                        <i data-lucide="user"></i>
+                    </div>
+                    <div>
+                        <div class="user-name">Store Admin</div>
+                        <div class="user-role">Inventory Manager</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <!-- TOP BAR -->
+            <header class="top-bar">
+                <div class="page-title-container">
+                    <h2 class="current-page-title" id="page-header-title">Dashboard Overview</h2>
+                    <p class="current-page-desc" id="page-header-desc">Monitor inventory health and run marketing simulations.</p>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="btn btn-outline" id="btn-load-demo">
+                        <i data-lucide="file-spreadsheet"></i>
+                        <span>Load Demo Data</span>
+                    </button>
+                    <button class="btn btn-outline-danger" id="btn-reset" title="Reset all inventory data">
+                        <i data-lucide="rotate-ccw"></i>
+                    </button>
+                    <div class="agent-status-tag" id="agent-status-badge">
+                        <span class="status-indicator status-idle"></span>
+                        <span class="status-text">AI Agent Idle</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- VIEW CONTAINER -->
+            <div class="view-content">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <section id="view-dashboard" class="view-section active">
+                    <!-- KPI CARDS -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-blue">
+                                <i data-lucide="package"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Total Products</span>
+                                <h3 class="kpi-value" id="kpi-total-products">0</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-green">
+                                <i data-lucide="dollar-sign"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Total Inventory Value</span>
+                                <h3 class="kpi-value" id="kpi-total-value">$0.00</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-teal">
+                                <i data-lucide="trending-up"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Healthy (Fast)</span>
+                                <h3 class="kpi-value" id="kpi-healthy">0</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-yellow">
+                                <i data-lucide="alert-triangle"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Slow-Moving</span>
+                                <h3 class="kpi-value" id="kpi-slow-moving">0</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-red">
+                                <i data-lucide="skull"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Dead Stock</span>
+                                <h3 class="kpi-value" id="kpi-dead-stock">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CHARTS GRID -->
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h4 class="chart-title">Inventory Health Breakdown</h4>
+                                <p class="chart-desc">Proportion of healthy vs. risk products</p>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="chart-health-pie"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h4 class="chart-title">Category Stock Level vs. Sales</h4>
+                                <p class="chart-desc">Inventory sizing compared to 90-day sales volume</p>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="chart-category-bar"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h4 class="chart-title">Dead Stock Risk Distribution</h4>
+                                <p class="chart-desc">Number of products grouped by Risk Scores</p>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="chart-risk-distribution"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RECENT RISK PRODUCTS QUICK TABLE -->
+                    <div class="table-card margin-top-lg">
+                        <div class="table-card-header">
+                            <div>
+                                <h4 class="table-title">High Priority Clearance Items</h4>
+                                <p class="table-desc">Slow-moving or dead products sorted by capital value</p>
+                            </div>
+                            <button class="btn btn-primary btn-sm btn-nav-trigger" data-nav="action-center">
+                                Go to Action Center
+                                <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table" id="dashboard-priority-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Stock Qty</th>
+                                        <th>Capital Tied Up</th>
+                                        <th>Sales Velocity</th>
+                                        <th>Risk Score</th>
+                                        <th>Classification</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">No inventory data loaded. Click "Load Demo Data" or go to the "Inventory Database" page to upload a file.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. INVENTORY DATABASE & UPLOAD VIEW -->
+                <section id="view-inventory" class="view-section">
+                    <!-- UPLOAD COMPONENT -->
+                    <div class="upload-container-grid">
+                        <div class="upload-card">
+                            <div class="upload-zone" id="upload-zone">
+                                <input type="file" id="file-input" accept=".csv,.xlsx,.xls" class="hidden-input">
+                                <i data-lucide="cloud-upload" class="upload-icon"></i>
+                                <h3>Drag & Drop Inventory File</h3>
+                                <p class="upload-subtext">Supports CSV or Excel spreadsheets (.xlsx, .xls)</p>
+                                <div class="upload-divider">or</div>
+                                <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                                    Browse Files
+                                </button>
+                            </div>
+                        </div>
+                        <div class="instructions-card">
+                            <h4>Required Spreadsheet Format</h4>
+                            <p class="desc-text">To correctly parse your catalog, ensure your sheet has headers matching or similar to these:</p>
+                            
+                            <ul class="format-list">
+                                <li><strong>Product Name</strong> <span class="badge-req">Required</span></li>
+                                <li><strong>SKU</strong> <span class="badge-req">Required</span> (Unique Identifier)</li>
+                                <li><strong>Category</strong> <span class="badge-req">Required</span></li>
+                                <li><strong>Quantity in Stock</strong> <span class="badge-req">Required</span></li>
+                                <li><strong>Current Price</strong> <span class="badge-req">Required</span></li>
+                                <li><strong>Units Sold Last 30 Days</strong> <span class="badge-req">Required</span></li>
+                                <li><strong>Units Sold Last 90 Days</strong> <span class="badge-req">Required</span></li>
+                                <li><strong>Expiry Date</strong> <span class="badge-opt">Optional</span> (YYYY-MM-DD)</li>
+                            </ul>
+
+                            <div class="instruction-actions">
+                                <button class="btn btn-outline btn-sm" id="btn-download-csv">
+                                    <i data-lucide="download"></i>
+                                    Download CSV Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RAW INVENTORY LIST CARD -->
+                    <div class="table-card margin-top-lg">
+                        <div class="table-card-header">
+                            <div>
+                                <h4 class="table-title">Full Inventory Database</h4>
+                                <p class="table-desc" id="inventory-count-text">0 items registered</p>
+                            </div>
+                            <div class="table-actions">
+                                <div class="search-box">
+                                    <i data-lucide="search"></i>
+                                    <input type="text" id="inventory-search" placeholder="Search SKU, name, or category...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table" id="inventory-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock Qty</th>
+                                        <th>Valuation</th>
+                                        <th>Sold (30d/90d)</th>
+                                        <th>Risk Score</th>
+                                        <th>Classification</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">No inventory items. Use the drag & drop zone above to upload data or click "Load Demo Data".</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. AI AGENT CONSOLE VIEW -->
+                <section id="view-agent-workflow" class="view-section">
+                    <div class="agent-console-layout">
+                        <!-- CONTROL PANEL -->
+                        <div class="agent-control-card">
+                            <div class="agent-hero">
+                                <div class="agent-avatar-ring">
+                                    <div class="agent-avatar-core">
+                                        <i data-lucide="bot"></i>
+                                    </div>
+                                    <div class="pulse-ring"></div>
+                                </div>
+                                <h3>Smart Inventory Specialist</h3>
+                                <p class="desc-text">AI Agent designed to optimize slow-moving catalog items by looking at competitor price indexes, regional demand, and generating promotional campaign material.</p>
+                            </div>
+                            
+                            <div class="agent-parameters">
+                                <h4>Agent Directives</h4>
+                                <div class="form-group">
+                                    <label for="agent-discount-mode">Clearance Aggressiveness</label>
+                                    <select id="agent-discount-mode" class="select-control">
+                                        <option value="balanced" selected>Balanced (Maximize margins & sales)</option>
+                                        <option value="aggressive">Liquidate (Move inventory at all costs)</option>
+                                        <option value="conservative">Conservative (Protect brand value, lower discount)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="agent-persona">Ad Copy Tone</label>
+                                    <select id="agent-persona" class="select-control">
+                                        <option value="excited" selected>Excited / Urgency-driven (Clearance vibes)</option>
+                                        <option value="professional">Professional / Direct value proposition</option>
+                                        <option value="witty">Witty / Engaging storytelling</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary btn-lg btn-full" id="btn-run-agent">
+                                <i data-lucide="play-circle"></i>
+                                <span>Initialize Smart Agent Workflow</span>
+                            </button>
+                        </div>
+
+                        <!-- TERMINAL MONITOR -->
+                        <div class="agent-terminal-card">
+                            <div class="terminal-header">
+                                <div class="terminal-controls">
+                                    <span class="control-dot dot-red"></span>
+                                    <span class="control-dot dot-yellow"></span>
+                                    <span class="control-dot dot-green"></span>
+                                </div>
+                                <span class="terminal-title">Agent Execution Stream</span>
+                                <div class="terminal-badge" id="terminal-step-badge">Idle</div>
+                            </div>
+                            <div class="terminal-progress-container">
+                                <div class="terminal-progress-bar" id="agent-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="terminal-output" id="terminal-output">
+                                <div class="log-line log-system">SYSTEM: Smart Sales Agent initialized. Waiting for instruction...</div>
+                                <div class="log-line log-system">SYSTEM: Upload inventory database and click "Initialize Smart Agent Workflow" to start analysis.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. ACTION CENTER / OUTPUT VIEW -->
+                <section id="view-action-center" class="view-section">
+                    <div class="action-center-header-bar">
+                        <div class="alert-summary">
+                            <i data-lucide="info"></i>
+                            <span>The AI Agent has completed its recommendations. Review strategies and export copies below.</span>
+                        </div>
+                        <button class="btn btn-outline-success" id="btn-export-full-pdf">
+                            <i data-lucide="file-text"></i>
+                            <span>Download Full PDF Clearance Report</span>
+                        </button>
+                    </div>
+
+                    <!-- STRATEGY CARDS CONTAINER -->
+                    <div class="strategy-catalog" id="strategy-cards-container">
+                        <!-- Dynamic strategy cards loaded here -->
+                        <div class="empty-state-container">
+                            <i data-lucide="cpu" class="large-icon"></i>
+                            <h3>No Active Strategy Recommendations</h3>
+                            <p class="desc-text">To generate sales strategies, pricing models, and marketing templates, run the AI Agent in the console first.</p>
+                            <button class="btn btn-primary btn-nav-trigger margin-top-md" data-nav="agent-workflow">
+                                Go to AI Agent Console
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL FOR DETAILED SPECIFIC PRODUCT STRATEGY -->
+    <div class="modal-backdrop hidden" id="strategy-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="modal-product-name">Product Details</h3>
+                    <span class="modal-subtitle" id="modal-product-sku">SKU: N/A</span>
+                </div>
+                <button class="modal-close-btn" id="btn-close-modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="modal-grid">
+                    <!-- Left: Metrics Breakdown -->
+                    <div class="modal-panel-left">
+                        <div class="modal-section-box">
+                            <h4 class="section-box-title">Inventory Performance</h4>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Current Quantity:</span>
+                                <span class="metric-val" id="modal-qty">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Daily Sales Velocity:</span>
+                                <span class="metric-val" id="modal-velocity">0 units/day</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Inventory Turnover Rate:</span>
+                                <span class="metric-val" id="modal-turnover">0x</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Stock Aging (DSI):</span>
+                                <span class="metric-val" id="modal-dsi">0 days</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Tied Up Capital:</span>
+                                <span class="metric-val font-semibold" id="modal-value">$0.00</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Risk Status:</span>
+                                <span class="badge" id="modal-risk-badge">Healthy</span>
+                            </div>
+                            <div class="risk-explanation" id="modal-risk-reason">Reason description.</div>
+                        </div>
+
+                        <div class="modal-section-box margin-top-md">
+                            <h4 class="section-box-title">AI Pricing Optimization</h4>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Current Retail Price:</span>
+                                <span class="metric-val">$<span id="modal-current-price">0.00</span></span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Researched Competitor Price:</span>
+                                <span class="metric-val">$<span id="modal-competitor-price">0.00</span></span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">Recommended Discount:</span>
+                                <span class="metric-val text-red font-semibold"><span id="modal-discount">0</span>% Off</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-lbl">New Target Retail Price:</span>
+                                <span class="metric-val text-green font-semibold">$<span id="modal-new-price">0.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Marketing Copies & Templates -->
+                    <div class="modal-panel-right">
+                        <div class="tabs-container">
+                            <div class="tabs-header">
+                                <button class="tab-btn active" data-tab="email">Email</button>
+                                <button class="tab-btn" data-tab="facebook">Facebook/IG</button>
+                                <button class="tab-btn" data-tab="google">Google Search</button>
+                            </div>
+                            
+                            <!-- TAB EMAIL -->
+                            <div class="tab-content active" id="tab-content-email">
+                                <div class="form-group">
+                                    <label>Subject Line</label>
+                                    <div class="copy-input-container">
+                                        <input type="text" id="modal-email-subject" readonly class="text-input-copy">
+                                        <button class="btn btn-copy" data-copy-target="modal-email-subject">
+                                            <i data-lucide="copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email Body</label>
+                                    <div class="copy-textarea-container">
+                                        <textarea id="modal-email-body" readonly class="textarea-copy" rows="12"></textarea>
+                                        <button class="btn btn-copy-floating" data-copy-target="modal-email-body">
+                                            <i data-lucide="copy"></i>
+                                            <span>Copy Email</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB FACEBOOK -->
+                            <div class="tab-content" id="tab-content-facebook">
+                                <div class="form-group">
+                                    <label>Social Post Caption</label>
+                                    <div class="copy-textarea-container">
+                                        <textarea id="modal-facebook-body" readonly class="textarea-copy" rows="15"></textarea>
+                                        <button class="btn btn-copy-floating" data-copy-target="modal-facebook-body">
+                                            <i data-lucide="copy"></i>
+                                            <span>Copy Copy</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB GOOGLE -->
+                            <div class="tab-content" id="tab-content-google">
+                                <div class="form-group">
+                                    <label>Headline 1 (Max 30 chars)</label>
+                                    <div class="copy-input-container">
+                                        <input type="text" id="modal-google-hl1" readonly class="text-input-copy">
+                                        <button class="btn btn-copy" data-copy-target="modal-google-hl1">
+                                            <i data-lucide="copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Headline 2 (Max 30 chars)</label>
+                                    <div class="copy-input-container">
+                                        <input type="text" id="modal-google-hl2" readonly class="text-input-copy">
+                                        <button class="btn btn-copy" data-copy-target="modal-google-hl2">
+                                            <i data-lucide="copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Ad Description (Max 90 chars)</label>
+                                    <div class="copy-textarea-container">
+                                        <textarea id="modal-google-desc" readonly class="textarea-copy" rows="4"></textarea>
+                                        <button class="btn btn-copy-floating" data-copy-target="modal-google-desc">
+                                            <i data-lucide="copy"></i>
+                                            <span>Copy Description</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="modal-bundle-recommendation">
+                    <strong>🎁 Recommended Bundle Strategy:</strong>
+                    <span id="modal-bundle-offer">Bundle item details here.</span>
+                </div>
+                <div>
+                    <button class="btn btn-outline" id="btn-modal-export-pdf">
+                        <i data-lucide="file-down"></i>
+                        <span>Export Strategy PDF</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="sample-data.js"></script>
+    <script src="pdf-generator.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

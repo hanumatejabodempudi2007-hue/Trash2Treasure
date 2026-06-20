@@ -1,0 +1,21 @@
+# Python virtual environment
+venv/
+ENV/
+env/
+.env
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local exports or logs
+*.log
+frontend/sample_inventory_template.csv
+clearance_report_*.pdf
+strategy_*.pdf
