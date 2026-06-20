@@ -90,3 +90,7 @@ FastAPI will spin up a local development server at:
 👉 **[http://127.0.0.1:8000/](http://127.0.0.1:8000/)**
 
 Open this address in your web browser. The FastAPI server will automatically host the frontend files, compile endpoints, and handle file uploads.
+## Demo Video
+
+YouTube (Unlisted):
+https://youtu.be/R9OaxFgEvpM?si=uTJDdZ-tvBpLcM-1
